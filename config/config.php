@@ -1,65 +1,29 @@
 <?php
-// config.php
-$db_host = 'localhost';
-$db_user = 'root';
-$db_pass = '';
-$db_name = 'login_system';
-
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// register.php
 session_start();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
-    $username = $conn->real_escape_string($_POST['username']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    
-    $sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $username, $password);
-    
-    if ($stmt->execute()) {
-        $_SESSION['message'] = "Registration successful! Please login.";
-        header("Location: index.html");
-        exit();
-    } else {
-        $_SESSION['error'] = "Registration failed!";
-    }
+// Ambiente (development ou production)
+define('ENVIRONMENT', 'production');
+
+// Configurações baseadas no ambiente
+if (ENVIRONMENT === 'production') {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
 }
 
-// login.php
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
-    $username = $conn->real_escape_string($_POST['username']);
-    $password = $_POST['password'];
-    
-    $sql = "SELECT id, username, password FROM users WHERE username = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            header("Location: welcome.php");
-            exit();
-        }
-    }
-    
-    $_SESSION['error'] = "Invalid username or password!";
-    header("Location: index.html");
-    exit();
-}
+// Configurações gerais
+date_default_timezone_set('America/Sao_Paulo');
+define('BASE_URL', 'http://seudominio.com');
+define('ASSETS_URL', BASE_URL . '/assets');
 
-// logout.php
-session_start();
-session_destroy();
-header("Location: index.html");
-exit();
-?>
+// Configurações de segurança
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.gc_maxlifetime', 3600); // 1 hora
+ini_set('session.cookie_lifetime', 3600); // 1 hora
+
+// Incluir banco de dados
+require_once 'database.php';
